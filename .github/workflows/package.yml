@@ -6,8 +6,6 @@ on:
       version:
         description: version tag
         required: false
-  release:
-    types: [published]
 
 jobs:
   package-linux:
