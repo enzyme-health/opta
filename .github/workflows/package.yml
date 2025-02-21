@@ -15,10 +15,10 @@ jobs:
       VERSION: ${{ github.event.inputs.version }}
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python 3.9
+      - name: Set up Python 3.8
         uses: actions/setup-python@v2
         with:
-          python-version: 3.9
+          python-version: 3.8
       - name: Install python dependencies
         run: |
           pip install pipenv
