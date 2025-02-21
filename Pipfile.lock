@@ -98,7 +98,7 @@
                 "sha256:c6d6cc054bdc9c83b48b8083e236e5f00f238428666d2ce2e083eaa5fd568565"
             ],
             "markers": "python_version >= '3.7'",
-            "version": "==5.0.0"
+            "version": ">=5.0.0"
         },
         "boto3": {
             "hashes": [
