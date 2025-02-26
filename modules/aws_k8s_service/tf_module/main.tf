@@ -23,6 +23,7 @@ resource "helm_release" "k8s-service" {
       probePort = var.probe_port
       ports = var.ports
       serviceAnnotations = var.service_annotations
+      testing = "test"
       containerResourceLimits = {
         memory = var.resource_limits == null ? "${var.resource_request["memory"] * 2}Mi" : "${var.resource_limits["memory"]}Mi"
       }
