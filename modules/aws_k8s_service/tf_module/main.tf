@@ -32,7 +32,7 @@ resource "helm_release" "k8s-service" {
       }
       deployPods = (local.uppercase_image != "AUTO") || (var.tag != null) || (var.digest != null)
       image = local.image
-      version = var.tag == null ? "latest" = var.tag
+      version = var.tag == null ? "latest" : var.tag
       livenessProbePath = var.healthcheck_path == null || var.liveness_probe_path != null ? var.liveness_probe_path : var.healthcheck_path
       livenessProbeCommand = length(var.healthcheck_command) == 0 || length(var.liveness_probe_command) != 0 ? var.liveness_probe_command : var.healthcheck_command
       initialLivenessDelay = var.initial_liveness_delay
