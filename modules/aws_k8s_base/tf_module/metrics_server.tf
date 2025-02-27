@@ -3,7 +3,7 @@ resource "helm_release" "metrics_server" {
   name            = "metrics-server"
   repository      = "https://charts.bitnami.com/bitnami"
   namespace       = "kube-system"
-  version         = "5.11.3"
+  version         = "6.5.3"
   atomic          = true
   cleanup_on_fail = true
   values = [
