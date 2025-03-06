@@ -1,3 +1,12 @@
+terraform {
+  required_providers {
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = ">= 1.13.3"
+    }
+  }
+}
+
 provider "kubernetes" {
   host                   = var.host
   token                  = var.token
