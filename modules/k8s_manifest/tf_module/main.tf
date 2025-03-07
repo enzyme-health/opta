@@ -2,11 +2,7 @@ terraform {
   required_providers {
     kubernetes = {
       source  = "hashicorp/kubernetes"
-      version = ">= 2.0.0"
-    }
-    kubernetes-alpha = {
-      source  = "hashicorp/kubernetes-alpha"
-      version = ">= 0.1.0"
+      version = ">= 1.13.3"
     }
   }
 }
@@ -20,7 +16,6 @@ provider "kubernetes" {
 }
 
 resource "kubernetes_manifest" "manifest" {
-  provider = kubernetes-alpha
   manifest = yamldecode(file(var.file_path))
   timeouts {
     update = "5m"
