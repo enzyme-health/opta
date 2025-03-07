@@ -20,6 +20,7 @@ provider "kubernetes" {
 }
 
 resource "kubernetes_manifest" "manifest" {
+  provider = kubernetes-alpha
   manifest = yamldecode(file(var.file_path))
   timeouts {
     update = "5m"
