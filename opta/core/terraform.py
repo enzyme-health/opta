@@ -57,9 +57,9 @@ class Terraform:
     @classmethod
     def init(cls, quiet: Optional[bool] = False, *tf_flags: str, layer: "Layer") -> None:
         kwargs = cls.insert_extra_env(layer)
-        if quiet:
-            kwargs["stderr"] = PIPE
-            kwargs["stdout"] = DEVNULL
+        # if quiet:
+        #     kwargs["stderr"] = PIPE
+        #     kwargs["stdout"] = DEVNULL
         try:
             nice_run(
                 ["terraform", "init", *tf_flags],
@@ -144,9 +144,9 @@ class Terraform:
         if not no_init:
             cls.init(quiet, layer=layer)
         kwargs = cls.insert_extra_env(layer)
-        if quiet:
-            kwargs["stderr"] = PIPE
-            kwargs["stdout"] = DEVNULL
+        # if quiet:
+        #     kwargs["stderr"] = PIPE
+        #     kwargs["stdout"] = DEVNULL
         try:
             nice_run(
                 ["terraform", "apply", "-compact-warnings", *tf_flags],
@@ -232,9 +232,9 @@ class Terraform:
     def plan(cls, *tf_flags: str, quiet: Optional[bool] = False, layer: "Layer",) -> None:
         cls.init(quiet, layer=layer)
         kwargs = cls.insert_extra_env(layer)
-        if quiet:
-            kwargs["stderr"] = PIPE
-            kwargs["stdout"] = DEVNULL
+        # if quiet:
+        #     kwargs["stderr"] = PIPE
+        #     kwargs["stdout"] = DEVNULL
         try:
             _ = nice_run(
                 ["terraform", "plan", "-compact-warnings", *tf_flags],
