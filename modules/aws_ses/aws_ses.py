@@ -112,8 +112,10 @@ class AwsEmailProcessor(ModuleProcessor):
                 try:
                     valid = validate_email(potential_email.strip())
                     email_list.append(valid.email)
-                except EmailNotValidError as e:
-                    logger.warning(str(e))
+                except EmailNotValidError:
+                    # Not str(e): email_validator's error messages can echo
+                    # back the invalid address itself.
+                    logger.warning("One of the contact emails entered is not valid.")
                     valid_emails = False
 
         sesv2_client.put_account_details(

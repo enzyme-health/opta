@@ -1,7 +1,9 @@
+import sys
 from subprocess import DEVNULL
 from typing import Generator
 from unittest.mock import Mock
 
+import pytest
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import (
     BlobClient,
@@ -96,6 +98,31 @@ class TestAzure:
         mocked_default_creds = mocker.patch("opta.core.azure.DefaultAzureCredential")
         Azure.get_credentials()
         mocked_default_creds.assert_called_once_with()
+
+    def test_get_credentials_does_not_log_captured_stderr(
+        self, mocker: MockFixture
+    ) -> None:
+        # azure-identity's credential chain writes diagnostic output (which
+        # can include misconfigured credential values) to stderr while it
+        # tries each provider; get_credentials captures that with
+        # redirect_stderr. Make sure we never log the captured buffer as-is.
+        SECRET_VALUE = "AZURE_CLIENT_SECRET=super-secret-value-xyz"
+        mocked_error_logger = mocker.patch("opta.core.azure.logger.error")
+        mocked_creds = mocker.Mock()
+
+        def fake_get_token(*args, **kwargs):  # type: ignore
+            print(SECRET_VALUE, file=sys.stderr)
+            raise ValueError("token acquisition failed")
+
+        mocked_creds.get_token.side_effect = fake_get_token
+        mocker.patch("opta.core.azure.DefaultAzureCredential", return_value=mocked_creds)
+
+        with pytest.raises(ValueError):
+            Azure.get_credentials()
+
+        mocked_error_logger.assert_called_once()
+        logged_message = mocked_error_logger.call_args[0][0]
+        assert SECRET_VALUE not in logged_message
 
     def test_get_remote_config(self, mocker: MockFixture, azure_layer: Mock) -> None:
         mocked_creds = mocker.Mock()

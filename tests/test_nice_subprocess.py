@@ -26,6 +26,24 @@ class TestNiceRun:
         assert completed_process.returncode == 0
         assert completed_process.stdout == "Hello world!\n"
 
+    def test_does_not_log_full_argv_or_output(self, mocker):
+        # log_to_datadog's payload used to be the full command argv and the
+        # full subprocess stdout, either of which can carry secrets (e.g.
+        # `terraform apply -var="password=..."` or a value it prints back).
+        log_spy = mocker.patch("opta.nice_subprocess.log_to_datadog")
+        SECRET = "super-secret-value-xyz"
+
+        completed_process = nice_run(
+            ["echo", SECRET],
+            check=True,
+            capture_output=True,
+            use_asyncio_nice_run=True,
+        )
+
+        assert completed_process.stdout == f"{SECRET}\n"
+        logged_text = " ".join(str(call) for call in log_spy.call_args_list)
+        assert SECRET not in logged_text
+
     def test_timeout(self):
         with pytest.raises(TimeoutError):
             nice_run(

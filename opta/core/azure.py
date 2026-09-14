@@ -33,7 +33,11 @@ class Azure(CloudClient):
             except ClientAuthenticationError:
                 pass
             except Exception as e:
-                logger.error(f.getvalue())
+                # Not f.getvalue(): it's the captured stderr from every
+                # credential provider Azure's SDK tried in the chain (env,
+                # managed identity, CLI, etc.), which can echo back
+                # misconfigured credential values.
+                logger.error(f"Failed to acquire Azure credentials: {type(e).__name__}")
                 raise e
         return cls.credentials
 

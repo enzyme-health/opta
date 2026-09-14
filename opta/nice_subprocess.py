@@ -11,7 +11,6 @@ from subprocess import (  # nosec
     Popen,
     TimeoutExpired,
 )
-from traceback import format_exc
 from typing import Optional, Union
 
 import psutil
@@ -129,12 +128,18 @@ def nice_run(  # type: ignore # nosec
             stderr = stderr.decode("utf-8")
         return CompletedProcess(process.args, retcode or 0, stdout, stderr)
     else:
+        command_name = "<unknown>"
         try:
             listargs = list(popenargs)
             listargs[0].insert(0, "exec")
             popenargs = tuple(listargs)
+            # Command name and arg count only: full argv can carry secrets
+            # (e.g. `terraform apply -var="password=..."`), and it's already
+            # visible live in this terminal via runtee's stdout/stderr tee.
+            argv = popenargs[0]
+            command_name = argv[1] if len(argv) > 1 else argv[0]
             log_to_datadog(
-                "Calling subprocess with these arguments:\n" + " ".join(*popenargs),
+                f"Calling subprocess: {command_name} ({len(argv) - 1} args)",
                 "INFO",
             )
 
@@ -164,30 +169,45 @@ def nice_run(  # type: ignore # nosec
         except TimeoutError as exc:
             print("Timeout while running command")
             signal_all_child_processes()
-            log_to_datadog(
-                "SUBPROCESS TIMEOUT EXCEPTION\n{}".format(format_exc()), "ERROR"
-            )
+            log_to_datadog("SUBPROCESS TIMEOUT EXCEPTION: {}".format(command_name), "ERROR")
             raise exc
 
         except KeyboardInterrupt:
             print("Received keyboard interrupt")
             log_to_datadog(
-                "SUBPROCESS KEYBOARDINTERRUPT EXCEPTION\n{}".format(format_exc()), "ERROR"
+                "SUBPROCESS KEYBOARDINTERRUPT EXCEPTION: {}".format(command_name), "ERROR"
             )
             raise
         except CalledProcessError as e:
+            # Exit code and output sizes only: e.stdout/e.stderr are the
+            # subprocess's own output and may carry secrets (e.g. terraform
+            # printing a resource attribute). Already visible live via tee.
             log_to_datadog(
-                "SUBPROCESS CALLEDPROCESSERROR\n STDOUT:{}".format(e.stdout), "ERROR"
+                "SUBPROCESS CALLEDPROCESSERROR: {} exit={} stdout={}B stderr={}B".format(
+                    command_name,
+                    e.returncode,
+                    len(e.stdout or ""),
+                    len(e.stderr or ""),
+                ),
+                "ERROR",
             )
-            stderr_lines = "SUBPROCESS CALLEDPROCESSERROR\n STDERR:{}".format(e.stderr)
-            for line in stderr_lines.split("\n"):
-                log_to_datadog(line, "ERROR")
             raise e
         except Exception as e:  # Including KeyboardInterrupt, communicate handled that.
-            log_to_datadog("SUBPROCESS OTHER EXCEPTION\n{}".format(format_exc()), "ERROR")
+            # Exception type only, not format_exc()/str(e): some exceptions
+            # (e.g. CalledProcessError) embed the full command argv in their
+            # own message.
+            log_to_datadog(
+                "SUBPROCESS OTHER EXCEPTION: {} ({})".format(
+                    command_name, type(e).__name__
+                ),
+                "ERROR",
+            )
             raise e
 
         log_to_datadog(
-            "SUBPROCESS NORMAL RUN\nSTDOUT:\n{}\n".format(result.stdout), "INFO",
+            "SUBPROCESS NORMAL RUN: {} stdout={}B".format(
+                command_name, len(result.stdout or "")
+            ),
+            "INFO",
         )
         return result
